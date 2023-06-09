@@ -1,0 +1,157 @@
+/*
+ * Copyright (c) 2021 Yonatan Schachter
+ * Copyright (c) 2022 Peter Johanson
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <rpi_pico/rp2040.dtsi>
+#include "ethan_adafruit_kb2040-pinctrl.dtsi"
+#include "sparkfun_pro_micro_connector.dtsi"
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
+		zephyr,display = &ssd1306_ssd1306_128x64_spi;
+		zephyr,canbus = &mcp2515_spi;
+
+		//zephyr,shell-uart = &cdc_acm_uart0;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
+	xtal_clk: xtal-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <12000000>;
+		#clock-cells = <0>;
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(8)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserved memory for the second stage bootloader */
+		second_stage_bootloader: partition@0 {
+			label = "second_stage_bootloader";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		/*
+		 * Usable flash. Starts at 0x100, after the bootloader. The partition
+		 * size is 8MB minus the 0x100 bytes taken by the bootloader.
+		 */
+		code_partition: partition@100 {
+			label = "code";
+			reg = <0x100 (DT_SIZE_M(8) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+ssdspi: &spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(8)>;
+	//clock-frequency = <1000000>;
+	//cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>, <&gpio0 3 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>, <&gpio0 3 GPIO_ACTIVE_LOW>;
+/*
+	ssd1306_ssd1306_128x64_spi: ssd1306@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		data_cmd-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+	};
+*/
+
+	ssd1306_ssd1306_128x64_spi: ssd1306@0 {
+		compatible = "solomon,ssd1306fb";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+		data_cmd-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	mcp2515_spi: mcp2515@1 {
+		compatible = "microchip,mcp2515";
+		reg = <1>;
+		osc-freq = <8000000>;
+		int-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		spi-max-frequency = <1000000>;
+		bus-speed = <125000>;
+		sjw = <1>;
+		//prop-seg = <2>;
+		//phase-seg1 = <7>;
+		//phase-seg2 = <6>;
+		sample-point = <875>;
+	};
+};
+
+&i2c1 {
+	status = "disabled";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&adc {
+	status = "disabled";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+&vreg {
+	regulator-always-on;
+	//regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_HI_Z>;
+};

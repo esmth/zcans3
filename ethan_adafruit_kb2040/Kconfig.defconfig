@@ -1,0 +1,26 @@
+# Copyright (c) 2022 Peter Johanson
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ETHAN_ADAFRUIT_KB2040
+
+config BOARD
+	default "ethan_adafruit_kb2040"
+
+config RP2_FLASH_W25Q080
+	default y
+
+#
+#config LV_Z_VDB_SIZE
+#	default 64
+#
+#config LV_Z_DPI
+#	default 148
+#
+#config LV_Z_BITS_PER_PIXEL
+#	default 1
+#
+#choice LV_COLOR_DEPTH
+#	default LV_COLOR_DEPTH_1
+#endchoice
+
+endif # BOARD_ADAFRUIT_KB2040
