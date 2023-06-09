@@ -31,19 +31,28 @@ void canrx(const struct device *dev, struct can_frame *frame, void *user_data){
 
 struct node {
 	uint16_t d1, d2;
-	struct node *next;
+	struct node *next, *prev;
 };
-struct node *head;
+struct node *head, *tail;
 unsigned int nodelen;
 
+void node_del(){
+	struct node *del = tail;
+	tail = del->prev;
+	k_free(del);
+	nodelen--;
+}
 void node_ins(uint16_t d1, uint16_t d2){
 	struct node *new = k_malloc(sizeof(struct node));
 	new->d1 = d1;
 	new->d2 = d2;
 	new->next = head;
 	head = new;
+	if(nodelen==0) tail = new;
 	nodelen++;
 	if(nodelen > 144){
+		node_del();
+/*
 		// delete node
 		struct node *del = head;
 		while(del->next->next != NULL){
@@ -52,6 +61,7 @@ void node_ins(uint16_t d1, uint16_t d2){
 		k_free(del->next);
 		del->next = NULL;
 		nodelen--;
+*/
 	}
 }
 
