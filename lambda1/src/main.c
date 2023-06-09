@@ -17,7 +17,6 @@
 
 //#define COUNTER_MSG_ID 0x12345
 #define COUNTER_MSG_ID 0x345
-#define SLEEP_TIME K_MSEC(250)
 
 const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
@@ -108,12 +107,15 @@ int main(void){
 	u8g2_Setup_ls013b7dh05_144x168_f(&u8g2, U8G2_R0, u8x8bytez, u8x8gpioz);
 	u8g2_InitDisplay(&u8g2);
 	u8g2_SetPowerSave(&u8g2, 0);
+	u8g2_SetFontMode(&u8g2, 1);
+	u8g2_SetDrawColor(&u8g2, 2);
 
 
-	char msg_lambda[20], msg_count[20];
+	char msg_lambda[20], msg_count[20], msg_avg[20];
 	unsigned int count=0;
 	struct node *cur;
 	uint16_t tmp;
+	uint32_t avg;
 
 	while (1) {
 /*
@@ -136,8 +138,10 @@ int main(void){
 
 		u8g2_ClearBuffer(&u8g2);
 
-		u8g2_SetFont(&u8g2, u8g2_font_logisoso38_tr);
-		u8g2_DrawStr(&u8g2, 0, 38, msg_lambda);
+		//u8g2_SetFont(&u8g2, u8g2_font_logisoso38_tr);
+		//u8g2_DrawStr(&u8g2, -3, 38, msg_lambda);
+		u8g2_SetFont(&u8g2, u8g2_font_logisoso32_tr);
+		u8g2_DrawStr(&u8g2, -2, 32, msg_lambda);
 
 		u8g2_SetFont(&u8g2, u8g2_font_5x7_tr);
 		u8g2_DrawStr(&u8g2, 0, 168, msg_count);
@@ -145,12 +149,19 @@ int main(void){
 		u8g2_DrawHLine(&u8g2, 0, 83, 144);
 		u8g2_DrawHLine(&u8g2, 0, 84, 144);
 
+		avg=0;
 		cur = head;
 		for(int i=0; i<nodelen; i++){
+			avg += cur->d1;
 			u8g2_DrawPixel(&u8g2, i, cur->d2);
 			u8g2_DrawPixel(&u8g2, i, cur->d2+1);
 			cur = cur->next;
 		}
+		avg /= nodelen;
+
+		sprintf(msg_avg, "%04u", avg);
+		u8g2_SetFont(&u8g2, u8g2_font_logisoso22_tr);
+		u8g2_DrawStr(&u8g2, 89, 22, msg_avg);
 
 		u8g2_SendBuffer(&u8g2);
 
